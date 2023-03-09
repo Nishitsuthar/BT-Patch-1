@@ -165,19 +165,11 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
   @track blankPredecessor = false;
 
   IntervalsList;
-  @wire(getholidays) holidayString({ data, error }) {
+  @wire(getholidays) holidayString({data, error}){
     if (data) {
-      let weekendData = {
-        "recurrentStartDate": "on Sat at 0:00",
-        "recurrentEndDate": "on Mon at 0:00",
-        "isWorking": false
-      };
-      this.IntervalsList = JSON.parse(data);
-      this.IntervalsList.push(weekendData);
-      console.log(this.IntervalsList);
-      debugger
-    } else if (error) {
-      console.error(error);
+      console.log('check data',data);
+    }else if (error) {
+      console.log(error);
     }
   };
 
@@ -1575,31 +1567,6 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
         this.scheduleItemsData,
         this.scheduleItemsDataList
       );
-      console.log('=== formatedSchData ===');
-      console.log({ formatedSchData });
-
-      // var refVar = formatedSchData;
-      // for(var key in refVar.rows[0].children){
-      //     for(var key2 in refVar.rows[0].children[key].children){
-      //         if(refVar.rows[0].children[key].children[key2].customtype == 'Milestone'){
-      //           for(var dd of phaseDateList){
-      //             if(dd.label == refVar.rows[0].children[key].name){
-      //               console.log('--'+refVar.rows[0].children[key].name);
-      //               console.log('-->'+dd.label);
-      //               console.log(refVar.rows[0].children[key].children[key2].startDate);
-
-      //               refVar.rows[0].children[key].children[key2].startDate == dd.value.expr1;
-
-      //               console.log(dd.value.expr1);
-      //               console.log(refVar.rows[0].children[key].children[key2].startDate);
-      //               console.log('----------');
-      //             }
-      //           }
-      //         }
-      //     }
-      // }
-      // console.log({refVar});
-      // formatedSchData = refVar;
 
       tasks["rows"] = formatedSchData["rows"];
       resources["rows"] = formatedSchData["resourceRowData"];
@@ -1608,10 +1575,29 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
       resourceRowData = formatedSchData["resourceRowData"];
       assignmentRowData = formatedSchData["assignmentRowData"];
       
+      let array = this.holidayString;
+      var obj = {};
+      array.forEach(element => {
+        obj['startDate'] = element.ActivityDate;
+        obj['endDate'] = element.ActivityDate;
+      });
+
       const holiday = [{
         "id": "general",
         "name": "General",
-        "intervals": this.IntervalsList,
+        "intervals": [
+          {
+            "recurrentStartDate": "on Sat at 0:00",
+            "recurrentEndDate": "on Mon at 0:00",
+            "isWorking": false
+          },
+          {
+            "startDate": "2023-03-06",
+            "endDate": "2023-03-07",
+            "isWorking": false,
+            "name": "Vacation",
+          }
+        ],
         "expanded": true,
         "children": [
           {

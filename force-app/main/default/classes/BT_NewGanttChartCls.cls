@@ -14,9 +14,9 @@ public class BT_NewGanttChartCls{
     }
 
     @AuraEnabled(cacheable=true)
-    public static String getholidays(){
+    public static List<Holiday> getholidays(){
         List<Holiday> holidays = new List<Holiday>([Select StartTimeInMinutes,Name, ActivityDate From Holiday Limit 50000]);
-        List<HolidayIntervals> getDataIntervalList = new List<HolidayIntervals>();
+        /* List<HolidayIntervals> getDataIntervalList = new List<HolidayIntervals>();
         HolidayIntervals getDataInterval = new HolidayIntervals();
         if (holidays.size() > 0) {
             for (Holiday h : holidays) {
@@ -27,9 +27,9 @@ public class BT_NewGanttChartCls{
                 getDataIntervalList.add(getDataInterval);
             }
         }
-        String IntervalsString = JSON.serialize(getDataIntervalList);
+        String IntervalsString = JSON.serialize(getDataIntervalList); */
 
-        return IntervalsString;
+        return holidays;
     }
 
     @AuraEnabled
