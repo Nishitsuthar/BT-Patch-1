@@ -13,12 +13,23 @@ public class BT_NewGanttChartCls{
         return objectName;
     }
 
-    @AuraEnabled
-    public static List<Holiday> getholidays(){
-        List<Holiday> holidays = [Select StartTimeInMinutes,Name, ActivityDate
-				            From Holiday 
-				            Limit 50000];
-        return holidays;
+    @AuraEnabled(cacheable=true)
+    public static String getholidays(){
+        List<Holiday> holidays = new List<Holiday>([Select StartTimeInMinutes,Name, ActivityDate From Holiday Limit 50000]);
+        List<HolidayIntervals> getDataIntervalList = new List<HolidayIntervals>();
+        HolidayIntervals getDataInterval = new HolidayIntervals();
+        if (holidays.size() > 0) {
+            for (Holiday h : holidays) {
+                getDataInterval.startDate = h.ActivityDate;
+                getDataInterval.endDate = h.ActivityDate.addDays(1);
+                getDataInterval.isWorking = false;
+                getDataInterval.name = h.Name;
+                getDataIntervalList.add(getDataInterval);
+            }
+        }
+        String IntervalsString = JSON.serialize(getDataIntervalList);
+
+        return IntervalsString;
     }
 
     @AuraEnabled
@@ -1094,7 +1105,18 @@ public class BT_NewGanttChartCls{
         public Date eDate;
         @AuraEnabled
         public Integer duration;
-
+        
+    }
+    
+    public class HolidayIntervals{
+        @AuraEnabled
+        public Date startDate;	//2023-03-06
+        @AuraEnabled
+        public Date endDate;	//2023-03-07
+        @AuraEnabled
+        public boolean isWorking;
+        @AuraEnabled
+        public String name;	//Vacation
     }
 
 }

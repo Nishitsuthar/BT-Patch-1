@@ -32,6 +32,7 @@ import changeOriginalDates from "@salesforce/apex/BT_NewGanttChartCls.changeOrig
 import { formatData, saveeditRecordMethod } from "./bryntum_GanttHelper";
 
 import getRecordType from "@salesforce/apex/BT_NewGanttChartCls.getRecordType";
+import getholidays from "@salesforce/apex/BT_NewGanttChartCls.getholidays";
 import { getPicklistValues, getObjectInfo } from 'lightning/uiObjectInfoApi';
 
 export default class Gantt_component extends NavigationMixin(LightningElement) {
@@ -162,6 +163,23 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
   @track contractorname;
   @track showOriginalDateModal = false;
   @track blankPredecessor = false;
+
+  IntervalsList;
+  @wire(getholidays) holidayString({ data, error }) {
+    if (data) {
+      let weekendData = {
+        "recurrentStartDate": "on Sat at 0:00",
+        "recurrentEndDate": "on Mon at 0:00",
+        "isWorking": false
+      };
+      this.IntervalsList = JSON.parse(data);
+      this.IntervalsList.push(weekendData);
+      console.log(this.IntervalsList);
+      debugger
+    } else if (error) {
+      console.error(error);
+    }
+  };
 
   @wire(getRecordType) objRecordType;
 
@@ -1589,23 +1607,11 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
       taskDependencyData = formatedSchData["taskDependencyData"];
       resourceRowData = formatedSchData["resourceRowData"];
       assignmentRowData = formatedSchData["assignmentRowData"];
-
+      
       const holiday = [{
         "id": "general",
         "name": "General",
-        "intervals": [
-          {
-            "recurrentStartDate": "on Sat at 0:00",
-            "recurrentEndDate": "on Mon at 0:00",
-            "isWorking": false
-          },
-          {
-            "startDate": "2023-03-06",
-            "endDate": "2023-03-07",
-            "isWorking": false,
-            "name": "Vacation",
-          }
-        ],
+        "intervals": this.IntervalsList,
         "expanded": true,
         "children": [
           {
@@ -1658,7 +1664,7 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
         // calendarsData: data.calendars.rows,
         calendarsData: holiday,
       });
-      console.log("calendar rows to  ==>", Array.isArray(data.calendars.rows));
+      debugger
       const gantt = new bryntum.gantt.Gantt({
         project,
         appendTo: this.template.querySelector(".container"),
