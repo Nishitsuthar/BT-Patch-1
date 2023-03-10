@@ -165,13 +165,21 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
   @track blankPredecessor = false;
 
   IntervalsList;
-  @wire(getholidays) holidayString({data, error}){
+  /* @wire(getholidays) holidayString({ data, error }) {
     if (data) {
-      console.log('check data',data);
-    }else if (error) {
-      console.log(error);
+      let weekendData = {
+        "recurrentStartDate": "on Sat at 0:00",
+        "recurrentEndDate": "on Mon at 0:00",
+        "isWorking": false
+      };
+      this.IntervalsList = JSON.parse(data);
+      this.IntervalsList.push(weekendData);
+      console.log(this.IntervalsList);
+      debugger
+    } else if (error) {
+      console.error(error);
     }
-  };
+  }; */
 
   @wire(getRecordType) objRecordType;
 
@@ -1187,12 +1195,21 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
   }
 
   connectedCallback() {
+    getholidays()
+      .then(result => {
+        let weekendData = {
+          "recurrentStartDate": "on Sat at 0:00",
+          "recurrentEndDate": "on Mon at 0:00",
+          "isWorking": false
+        };
+        this.IntervalsList = JSON.parse(result);
+        console.log('stop here please ',this.IntervalsList);
+        this.IntervalsList.push(weekendData);
+      })
+      .catch(error => {
+        console.error(error);
+      });
     this.phaseFunction();
-    const holidayInterval = {
-      startDate: new Date(2023, 3, 8), // March 9th
-      endDate: new Date(2023, 3, 8),   // March 9th
-      isWorking: false
-    }
   }
 
   renderedCallback() {
@@ -1567,6 +1584,31 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
         this.scheduleItemsData,
         this.scheduleItemsDataList
       );
+      console.log('=== formatedSchData ===');
+      console.log({ formatedSchData });
+
+      // var refVar = formatedSchData;
+      // for(var key in refVar.rows[0].children){
+      //     for(var key2 in refVar.rows[0].children[key].children){
+      //         if(refVar.rows[0].children[key].children[key2].customtype == 'Milestone'){
+      //           for(var dd of phaseDateList){
+      //             if(dd.label == refVar.rows[0].children[key].name){
+      //               console.log('--'+refVar.rows[0].children[key].name);
+      //               console.log('-->'+dd.label);
+      //               console.log(refVar.rows[0].children[key].children[key2].startDate);
+
+      //               refVar.rows[0].children[key].children[key2].startDate == dd.value.expr1;
+
+      //               console.log(dd.value.expr1);
+      //               console.log(refVar.rows[0].children[key].children[key2].startDate);
+      //               console.log('----------');
+      //             }
+      //           }
+      //         }
+      //     }
+      // }
+      // console.log({refVar});
+      // formatedSchData = refVar;
 
       tasks["rows"] = formatedSchData["rows"];
       resources["rows"] = formatedSchData["resourceRowData"];
@@ -1575,29 +1617,10 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
       resourceRowData = formatedSchData["resourceRowData"];
       assignmentRowData = formatedSchData["assignmentRowData"];
       
-      let array = this.holidayString;
-      var obj = {};
-      array.forEach(element => {
-        obj['startDate'] = element.ActivityDate;
-        obj['endDate'] = element.ActivityDate;
-      });
-
       const holiday = [{
         "id": "general",
         "name": "General",
-        "intervals": [
-          {
-            "recurrentStartDate": "on Sat at 0:00",
-            "recurrentEndDate": "on Mon at 0:00",
-            "isWorking": false
-          },
-          {
-            "startDate": "2023-03-06",
-            "endDate": "2023-03-07",
-            "isWorking": false,
-            "name": "Vacation",
-          }
-        ],
+        "intervals": this.IntervalsList,
         "expanded": true,
         "children": [
           {
@@ -1650,7 +1673,9 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
         // calendarsData: data.calendars.rows,
         calendarsData: holiday,
       });
-      debugger
+
+      console.log('project data check here ', { holiday });
+      
       const gantt = new bryntum.gantt.Gantt({
         project,
         appendTo: this.template.querySelector(".container"),
@@ -2369,51 +2394,21 @@ export default class Gantt_component extends NavigationMixin(LightningElement) {
         },
         listeners: {
           beforeCellEditStart: ({ editorContext }) => {
+            console.log('editorContext ', { editorContext });
+            //* FOR DISABLING ENNER DATE ON CLICK EVENT
             if (
               editorContext.column.field !== "percentDone" ||
               editorContext.record.isLeaf
             ) {
               if (editorContext.column.field == "endDate") {
-                var StartString =
-                  editorContext.record._data.startDate.getFullYear() +
-                  "-" +
-                  Number(editorContext.record._data.startDate.getMonth() + 1) +
-                  "-" +
-                  editorContext.record._data.startDate.getDate();
-                var that = this;
-                var start = new Date(
-                  editorContext.record._data.startDate.getTime()
-                );
-                var duration = editorContext.record._data.duration;
-                var eDate = new Date(start);
-                for (var i = 0; i < duration; i++) {
-                  if (i == 0) {
-                    eDate = new Date(start.setDate(start.getDate() + i));
-                  } else {
-                    eDate = new Date(eDate.setDate(eDate.getDate() + 1));
-                  }
-                  if (new Date(eDate).getDay() == 0) {
-                    eDate = new Date(eDate.setDate(eDate.getDate() + 1));
-                  }
-                  if (new Date(eDate).getDay() == 6) {
-                    eDate = new Date(eDate.setDate(eDate.getDate() + 2));
-                  }
-                  eDate = new Date(eDate);
-                }
-                editorContext.value.setDate(eDate.getDate());
-                editorContext.value.setMonth(eDate.getMonth());
-                editorContext.value.setFullYear(eDate.getFullYear());
-              }
-              if (editorContext.column.field == "fullDuration") {
-                /* setTimeout(() =>  {
-                                    if(this.template.querySelector(".b-cell-editor")){
-                                        if(source._selectedRecordCollection._values[0]){
-                                            if(source._selectedRecordCollection._values[0].name == 'Milestone Complete'){
-                                                this.template.querySelector(".b-cell-editor").getElementsByTagName('input')[0].value = 1
-                                            }
-                                        }
-                                    }
-                                },250) */
+                var finish = new Date(editorContext.record._data.endDate);
+                var finishDate = finish.getDate() - 1;
+                var finishMonth = finish.getMonth(); //* because getMonth() returns month inorder to 0-11
+                var finishYear = finish.getFullYear();
+                
+                editorContext.value.setDate(finishDate);
+                editorContext.value.setMonth(finishMonth);
+                editorContext.value.setFullYear(finishYear);
               }
             }
           },
